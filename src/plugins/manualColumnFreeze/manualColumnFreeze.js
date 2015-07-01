@@ -168,6 +168,26 @@
       return instance.manualColumnPositions[col];
     }
 
+    function getModifiedColumnInverseIndex(col) {
+      return invertArray(instance.manualColumnPositions)[col];
+    }
+
+    function invertArray(arr) {
+      var result = [];
+
+      if(!arr) return result;
+
+      for (var i = 0; i < arr.length; i++) {
+        var value = parseInt(arr[i]);
+
+        if(!isNaN(value)) {
+          result[value] = i;
+        }
+      }
+
+      return result;
+    }
+
     /**
      * 'modiftyCol' callback
      * @param {Number} col
@@ -179,9 +199,21 @@
       return getModifiedColumnIndex(col);
     }
 
+    /**
+     * 'modiftyColInverse' callback
+     * @param {Number} col
+     */
+    function onModifyColInverse(col) {
+      if (this.manualColumnPositionsPluginUsages.length > 1) { // if another plugin is using manualColumnPositions to modify column order, do not double the translation
+        return col;
+      }
+      return getModifiedColumnInverseIndex(col);
+    }
+
     function bindHooks() {
       //instance.addHook('afterGetColHeader', onAfterGetColHeader);
       instance.addHook('modifyCol', onModifyCol);
+      instance.addHook('modifyColInverse', onModifyColInverse);
       instance.addHook('afterContextMenuDefaultOptions', addContextMenuEntry);
     }
 

@@ -113,10 +113,10 @@
 
     if (typeof this.propToColCache.get(prop) !== 'undefined') {
       col = this.propToColCache.get(prop);
+      col = Handsontable.hooks.run(this.instance, 'modifyColInverse', col);
     } else {
       col = prop;
     }
-    col = Handsontable.hooks.run(this.instance, 'modifyCol', col);
 
     return col;
   };

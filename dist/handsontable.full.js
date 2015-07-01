@@ -6,7 +6,7 @@
  * Licensed under the MIT license.
  * http://handsontable.com/
  *
- * Date: Thu Feb 19 2015 14:25:57 GMT+0100 (CET)
+ * Date: Wed Jul 01 2015 17:02:56 GMT-0700 (Pacific Daylight Time)
  */
 /*jslint white: true, browser: true, plusplus: true, indent: 4, maxerr: 50 */
 
@@ -997,8 +997,7 @@ Handsontable.Core = function (rootElement, userSettings) {
         var row = changes[i][0];
         var col = datamap.propToCol(changes[i][1]);
         // column order may have changes, so we need to translate physical col index (stored in datasource) to logical (displayed to user)
-        var logicalCol = instance.runHooks('modifyCol', col);
-        var cellProperties = instance.getCellMeta(row, logicalCol);
+        var cellProperties = instance.getCellMeta(row, col);
 
         if (cellProperties.type === 'numeric' && typeof changes[i][3] === 'string') {
           if (changes[i][3].length > 0 && (/^-?[\d\s]*(\.|\,)?\d*$/.test(changes[i][3]) || cellProperties.format )) {
@@ -5025,10 +5024,10 @@ Handsontable.helper.isWebComponent = function (element) {
 
     if (typeof this.propToColCache.get(prop) !== 'undefined') {
       col = this.propToColCache.get(prop);
+      col = Handsontable.hooks.run(this.instance, 'modifyColInverse', col);
     } else {
       col = prop;
     }
-    col = Handsontable.hooks.run(this.instance, 'modifyCol', col);
 
     return col;
   };
@@ -16731,6 +16730,26 @@ Handsontable.hooks.add('afterInit', function() {
       return instance.manualColumnPositions[col];
     }
 
+    function getModifiedColumnInverseIndex(col) {
+      return invertArray(instance.manualColumnPositions)[col];
+    }
+
+    function invertArray(arr) {
+      var result = [];
+
+      if(!arr) return result;
+
+      for (var i = 0; i < arr.length; i++) {
+        var value = parseInt(arr[i]);
+
+        if(!isNaN(value)) {
+          result[value] = i;
+        }
+      }
+
+      return result;
+    }
+
     /**
      * 'modiftyCol' callback
      * @param {Number} col
@@ -16742,9 +16761,21 @@ Handsontable.hooks.add('afterInit', function() {
       return getModifiedColumnIndex(col);
     }
 
+    /**
+     * 'modiftyColInverse' callback
+     * @param {Number} col
+     */
+    function onModifyColInverse(col) {
+      if (this.manualColumnPositionsPluginUsages.length > 1) { // if another plugin is using manualColumnPositions to modify column order, do not double the translation
+        return col;
+      }
+      return getModifiedColumnInverseIndex(col);
+    }
+
     function bindHooks() {
       //instance.addHook('afterGetColHeader', onAfterGetColHeader);
       instance.addHook('modifyCol', onModifyCol);
+      instance.addHook('modifyColInverse', onModifyColInverse);
       instance.addHook('afterContextMenuDefaultOptions', addContextMenuEntry);
     }
 
